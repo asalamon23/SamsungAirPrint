@@ -7,7 +7,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk, messagebox
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else Path(__file__).resolve().parent
 ENGINE = ROOT / 'airprint_bridge.py'
 CONFIG = ROOT / 'config.json'
 process = None
@@ -54,7 +54,11 @@ def start():
         return
     try:
         log = open(ROOT / 'bridge-console.log', 'ab', buffering=0)
-        process = subprocess.Popen([sys.executable, str(ENGINE)], cwd=str(ROOT), stdout=log, stderr=subprocess.STDOUT,
+        engine_python = ROOT / '.venv' / 'Scripts' / 'python.exe'
+        if not engine_python.exists():
+            messagebox.showerror('Setup required', 'Run Setup.ps1 to install the engine and Python environment.')
+            return
+        process = subprocess.Popen([str(engine_python), str(ENGINE)], cwd=str(ROOT), stdout=log, stderr=subprocess.STDOUT,
                                    creationflags=subprocess.CREATE_NO_WINDOW)
         log.close()
         status.set('Starting…')
@@ -65,9 +69,9 @@ def start():
 
 def check():
     if process and process.poll() is None:
-        status.set('Running — iPhone can discover the printer')
+        status.set('Engine running — check iPhone printer discovery')
     else:
-        status.set('Stopped / startup failed — see airprint_bridge.log')
+        status.set('Stopped / startup failed — see bridge-console.log')
 
 
 def stop():
